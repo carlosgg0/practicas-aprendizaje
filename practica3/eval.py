@@ -22,7 +22,9 @@ def cargar_datos_prueba(set, fold):
         Returns: 
             test_data: el dataFrame con el conjunto de prueba
     """
-    test_data = pd.read_csv(f"./{set}/test{fold}_{set}.csv")
+    base_path = os.path.dirname(__file__)
+    full_path = os.path.join(base_path, f"{set}/training{fold}_{set}.csv")
+    test_data = pd.read_csv(full_path)
     return test_data
 
 def evaluar_modelo(model, set, fold):
@@ -37,7 +39,9 @@ def evaluar_modelo(model, set, fold):
             metrics: una lista de las 8 métricas obtenidas
     """
     # Cargamos el conjunto de validación
-    test_data = pd.read_csv(f"./{set}/test{fold}_{set}.csv")
+    base_path = os.path.dirname(__file__)
+    full_path = os.path.join(base_path, f"{set}/training{fold}_{set}.csv")
+    test_data = pd.read_csv(full_path)
 
     X_test = test_data.iloc[:,:-1]
     y_test = test_data.iloc[:,-1]
