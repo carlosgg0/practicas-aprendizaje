@@ -10,9 +10,8 @@ from sklearn.utils import shuffle
 
 RANDOM = 42
 
-
-# ESTE SCRIPT GENERA LOS DATASETS CON SHUFFLE
-
+# Este script genera los datasets con shuffle, pues los originales no estaban aleatorizados.
+# Es independiente a la práctica, realmente (pues es el de la práctica 2 reescrito).
 
 def generate_train_test_set(kf, data, target, name):
     
