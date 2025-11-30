@@ -4,112 +4,110 @@
 import pandas as pd
 import numpy as np
 import os
-import train
-from sklearn.metrics import roc_curve, roc_auc_score
+import joblib
+import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
+from sklearn.metrics import multilabel_confusion_matrix
 
-MODELS = ['knn', 'svm', 'naive_bayes', 'random_forest']
-SETS = ['norm', 'norm_PCA80', 'norm_PCA95', 'original', 'original_PCA80', 'original_PCA95', 'stand', 'stand_PCA80', 'stand_PCA95']
+
+TARGET_NAMES = ["setosa", "versicolor", "virginica"]        # Contiene los nombres de las clases
+METHODS = ['knn', 'svm', 'naive_bayes', 'random_forest']    # Nombre de todos los métodos 
+SETS = [                                                    # Nombre de todos los conjuntos de datos
+    'norm', 'norm_PCA80', 'norm_PCA95',
+    'original', 'original_PCA80', 'original_PCA95',
+    'stand', 'stand_PCA80', 'stand_PCA95'
+]
+# Nombre de todas las métricas a calcular
 METRICS_NAMES = ['Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1_Score', 'FNR', 'FPR', 'AUC']
 
-def cargar_datos_prueba(set, fold):
+# Creación de directorios necesarios
+CWD = os.getcwd()
+PREDICTIONS_PATH = os.path.join(CWD, "predictions")
+IMAGES_PATH = os.path.join(CWD, "roc-curve-images")
+DATA_PATH = os.path.join(CWD, "data")
+METRICS_PATH = os.path.join(CWD, "metrics")
+
+MODELS_PATH = os.path.join(CWD, "models") # Este se creó en train.ipynb
+
+try:
+    os.mkdir(PREDICTIONS_PATH)
+    os.mkdir(IMAGES_PATH)
+    os.mkdir(DATA_PATH)
+    os.mkdir(METRICS_PATH)
+except FileExistsError:
+    pass
+
+def make_predictions(
+    model: KNeighborsClassifier | SVC | GaussianNB | RandomForestClassifier,
+    set: str, 
+    fold: int,
+    method_name: str
+):
     """
-        Carga el conjunto de datos de prueba en un dataFrame.
-
-        Args:
-            set: version del conjunto de datos
-            fold: particion
-
-        Returns: 
-            test_data: el dataFrame con el conjunto de prueba
+    Esta función se encarga de:
+    - Hacer las predicciones de un modelo sobre un conjunto de test y fold determinado
+    - Guardar las probabilidades de pertenencia a cada clase en formato csv
+    - Generar curvas ROC y el área bajo la curva
+    - Generar métricas accuracy, precision, etc. y las devuelve como una lista
+    Nótese que las métricas son calculadas "One-vs-rest", es decir, 
+    se calculan todas las métricas como si fuera un problema binario
+    considerando una de las clases como positiva y las otras dos negativas
+    y luego se computa la media de las métricas obtenidas
     """
-    base_path = os.path.dirname(__file__)
-    full_path = os.path.join(base_path, f"{set}/training{fold}_{set}.csv")
-    test_data = pd.read_csv(full_path)
-    return test_data
-
-def evaluar_modelo(model, set, fold):
-    """
-        Evalúa el modelo en cuestión utilizando Cross Validation con K iteraciones.
-
-        Args:
-            model: nombre del método a utilizar
-            k: número de iteraciones
-
-        Returns:
-            metrics: una lista de las 8 métricas obtenidas
-    """
-    # Cargamos el conjunto de validación
-    base_path = os.path.dirname(__file__)
-    full_path = os.path.join(base_path, f"{set}/training{fold}_{set}.csv")
-    test_data = pd.read_csv(full_path)
-
-    X_test = test_data.iloc[:,:-1]
-    y_test = test_data.iloc[:,-1]
-
-    # Obtenemos los valores predichos por el modelo
-    y_pred = model.predict(X_test)
-
-    # Obtenemos las probabilidades de pertenencia a cada clase
-    y_scores = model.predict_proba(X_test)
-
-    # Cálculo de AUC_ROC
-    roc_auc = roc_auc_score(y_test, y_scores)
-    fpr_curve, tpr_curve, _ = roc_curve(y_test, y_scores)
-
-    # Calculamos los valores de la matriz de confusión
-    TP = np.sum((y_test == 1) & (y_pred == 1))
-    TN = np.sum((y_test == 0) & (y_pred == 0))
-    FP = np.sum((y_test == 0) & (y_pred == 1))
-    FN = np.sum((y_test == 1) & (y_pred == 0))
-
-    # Calculamos métricas
-    sensitivity = TP / (TP + FN) if (TP + FN) > 0 else 0
-    accuracy = (TP + TN) / (TP + TN + FP + FN)
-    specificity = TN / (FP + TN) if (FP + TN) > 0 else 0
-    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-    fnr = FN / (TP + FN) if (TP + FN) > 0 else 0
-    fpr = FP / (FP + TN) if (FP + TN) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-    return [accuracy, sensitivity, specificity, precision, f1, fnr, fpr, roc_auc]
-
-def obtener_metricas():
-    # Iteramos sobre todos los modelos y sets
-    for model in MODELS:
-        for version in SETS:
-            fold_metrics = []
-            for fold in range(1,6):
-                eval_model = train.entrena_modelo(model, version, fold)
-                metrics = evaluar_modelo(eval_model, version, fold)
-
-                fold_metrics.append(metrics)
-                
-            # Creamos el DataFrame con los resultados de los folds
-            df_metrics = pd.DataFrame(fold_metrics, columns=METRICS_NAMES)
-            
-            # Calculamos la media de cada columna (métrica)
-            df_mean = df_metrics.mean().to_frame().T
-            df_mean.index = ['Mean']
-            
-            # Concatenamos la media al final del DataFrame
-            df_final = pd.concat([df_metrics, df_mean])
-            
-            # Asignamos nombres (Folds 1-5 y Mean)
-            df_final.index = [f'Fold_{i}' for i in range(1, 6)] + ['Mean']
-
-            # Exportamos el CSV (creamos la carpeta si no existe)
-            OUTPUT_DIR = 'metrics'
+    print(f"model: {method_name}, set: {set}, fold: {fold}")
     
-            if not os.path.exists(OUTPUT_DIR):
-                os.makedirs(OUTPUT_DIR)
-                print(f"Carpeta '{OUTPUT_DIR}' creada.")
+    # Cargamos el conjunto de datos de test del fold correspondiente
+    full_path = os.path.join(DATA_PATH, set, f"test{fold}_{set}.csv")
+    test_df = pd.read_csv(full_path)
+    
+    X_test = test_df.iloc[:, :-1]
+    y_test = test_df.iloc[:, -1]
 
-            file_name = f"{model}_{version}_metrics.csv"
-            full_path = os.path.join(OUTPUT_DIR, file_name)
-            df_final.to_csv(full_path, index=True, index_label='Fold/Mean')
-            
-            print(f"Guardado: {file_name}")
+    y_pred = model.predict(X_test)
+    
+    # Probabilidades de pertenencia a cada clase
+    y_scores = pd.DataFrame(model.predict_proba(X_test))
+    y_scores.to_csv(os.path.join(PREDICTIONS_PATH, f"pred_{fold}_{set}_{method_name}.csv"), index=False)
+    
+    # Curvas ROC del random forest:
+    if method_name == "random_forest":
+        fig, ax = plt.subplots(figsize=(6, 6))
 
-if __name__ == "__main__":
-    obtener_metricas()
+        for class_id in range(3):
+            fpr, tpr, _ = roc_curve(y_test, y_scores.iloc[ : , class_id], pos_label=class_id)  
+            ax.plot(fpr, tpr, label=f"ROC curve - Positive class: {TARGET_NAMES[class_id]}")
+
+        ax.set(
+            xlabel="False Positive Rate",
+            ylabel="True Positive Rate",
+            title="Curva ROC One-vs-Rest"
+        )
+        
+        ax.legend()
+        fig.savefig(os.path.join(IMAGES_PATH, f"ROC_{set}_{fold}.png"))
+        plt.close(fig) # No mostrar la figura
+
+    # Área debajo de la curva ROC
+    roc_auc = roc_auc_score(y_test, y_scores, multi_class='ovr')
+    
+    # Resto de métricas
+    cm = multilabel_confusion_matrix(y_test, y_pred)
+    tn = cm[ : , 0, 0]
+    tp = cm[ : , 1, 1]
+    fn = cm[ : , 1, 0]
+    fp = cm[ : , 0, 1]
+
+    accuracy = accuracy_score(y_test, y_pred)
+    sensitivity = np.mean(tp / (tp + fn))
+    recall = sensitivity
+    precision = np.mean(tp / (tp + fp))
+    fnr = np.mean(fn / (fn + tp))
+    fpr = np.mean(fp / (fp + tn))
+    specificity = 1 - fpr
+    f1 = 2 * precision * recall / (precision + recall)
+    
+    return [accuracy, sensitivity, specificity, precision, f1, fnr, fpr, roc_auc]
