@@ -91,12 +91,14 @@ def get_confusion_matrix(y_true, y_pred, model_name):
 
 def compute_metrics(y_true, y_pred):
     """Function to compute all the necessary metrics using the "One vs Rest" approach"""
-    mlcm = multilabel_confusion_matrix(y_true, y_pred)
-
-    tn = mlcm[ : , 0, 0]
-    tp = mlcm[ : , 1, 1]
-    fn = mlcm[ : , 1, 0]
-    fp = mlcm[ : , 0, 1]
+    mcm = multilabel_confusion_matrix(y_true, y_pred)
+    
+    print(mcm)
+    
+    tn = mcm[:, 0, 0]
+    tp = mcm[:, 1, 1]
+    fn = mcm[:, 1, 0]
+    fp = mcm[:, 0, 1]
 
     accuracy = accuracy_score(y_true, y_pred)
     recall = np.mean(tp / (tp + fn))
@@ -156,6 +158,10 @@ def main():
 
         # Obtener las predicciones para el conjunto de test
         y_true, y_pred, y_score = make_predictions(model_path, TEST_DATA_PATH, CLASS_NAMES)
+
+        # print(y_true)
+        # print(y_pred)
+
 
         # Matriz de confusión del modelo
         get_confusion_matrix(y_true, y_pred, model_name=variant)
