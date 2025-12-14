@@ -1,7 +1,7 @@
 task: classify
 mode: train
 model: yolo11n-cls.pt
-data: /home/carlos/3sw/aprendizaje/practicas-aprendizaje/practica4/dataset
+data: c:\Users\gonza\Desktop\universidad\Malaga\Tercero\Aprendizaje_Automatico\practicas-aprendizaje\practica4\dataset
 epochs: 30
 time: null
 patience: 10
@@ -13,7 +13,7 @@ cache: false
 device: '0'
 workers: 8
 project: runs
-name: train_yolo11n-cls.pt
+name: train_yolo11n-cls.pt11
 exist_ok: false
 pretrained: true
 optimizer: auto
@@ -103,4 +103,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /home/carlos/3sw/aprendizaje/practicas-aprendizaje/practica4/runs/train_yolo11n-cls.pt
+save_dir: C:\Users\gonza\Desktop\universidad\Malaga\Tercero\Aprendizaje_Automatico\practicas-aprendizaje\practica4\runs\train_yolo11n-cls.pt11
