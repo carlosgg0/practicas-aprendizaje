@@ -1,10 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
-from sklearn.metrics import ConfusionMatrixDisplay, classification_report, confusion_matrix, accuracy_score, roc_auc_score, roc_curve
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, accuracy_score, roc_auc_score, roc_curve
 from sklearn.metrics import multilabel_confusion_matrix
 
 
@@ -34,7 +33,7 @@ METRICS_NAMES = ["acc", "recall", "precision", "FNR", "FPR", "specificity", "F1"
 
 
 def make_predictions(model_path, test_path, class_list):
-    """Make predictions with the trained model and return y_true, y_pred"""
+    """Compute predictions with the trained model and return y_true, y_pred, y_score"""
 
     model = YOLO(model_path)
     # print(model.names)
@@ -66,7 +65,7 @@ def make_predictions(model_path, test_path, class_list):
             y_score.append(res.probs.data.cpu().numpy())
             y_true.append(class_idx)
             y_pred.append(pred_idx)
-            
+
     return np.array(y_true), np.array(y_pred), np.array(y_score)
 
 
