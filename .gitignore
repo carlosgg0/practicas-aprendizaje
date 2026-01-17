@@ -3,3 +3,4 @@ env3
 .venv
 practica4/dataset/
 practica4/full_dataset/
+ajedrez/lichess_games.csv
