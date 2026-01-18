@@ -5,3 +5,5 @@ practica4/dataset/
 practica4/full_dataset/
 ajedrez/lichess_games.csv
 profundo/full_dataset/
+profundo/dataset/
+profundo/temp_coco/
