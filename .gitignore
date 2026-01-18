@@ -7,3 +7,5 @@ ajedrez/lichess_games.csv
 profundo/full_dataset/
 profundo/dataset/
 profundo/temp_coco/
+profundo/custom_coco.yaml
+profundo/*.pt
