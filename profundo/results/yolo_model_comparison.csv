@@ -1,0 +1,6 @@
+Modelo,Detecciones,Conf_Media,Precision,Recall,F1-Score,Tiempo_Inferencia(ms)
+yolov8n.pt,13,0.4837375,0.615,0.4,0.485,47.849
+yolov8s.pt,16,0.5816604,0.75,0.6,0.667,100.14
+yolov8m.pt,20,0.6045002,0.6,0.6,0.6,219.036
+yolov8l.pt,19,0.62031287,0.737,0.7,0.718,392.338
+yolov8x.pt,19,0.6304859,0.737,0.7,0.718,560.833
